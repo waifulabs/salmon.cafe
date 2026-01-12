@@ -2,8 +2,8 @@
 .git
 .gitignore
 
-# Node
-node_modules
+# Node - temporarily allow node_modules to be copied due to npm Docker bug
+# node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

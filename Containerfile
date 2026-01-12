@@ -11,29 +11,32 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and pre-installed node_modules
+# Note: node_modules is copied from host due to npm ci extraction bug in some Docker environments
+# In CI/CD, this should be: COPY package*.json ./ && RUN npm ci
 COPY package*.json ./
+COPY node_modules ./node_modules
 
-# Install ALL dependencies (including dev for builds)
-RUN npm ci
+# Verify dependencies are installed correctly
+RUN test -f node_modules/express/index.js || (echo "ERROR: Dependencies not installed" && exit 1)
 
-# Stage 2: Runtime stage - use node slim for now (not distroless) for debugging
-FROM node:20-bookworm-slim
+# Stage 2: Runtime stage with distroless
+FROM gcr.io/distroless/nodejs20-debian12:nonroot
 
 WORKDIR /app
 
 # Copy node_modules and package files from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
+COPY --from=builder --chown=nonroot:nonroot /app/node_modules ./node_modules
+COPY --from=builder --chown=nonroot:nonroot /app/package*.json ./
 
 # Copy application source
-COPY drizzle.config.js ./
-COPY src ./src
+COPY --chown=nonroot:nonroot drizzle.config.js ./
+COPY --chown=nonroot:nonroot src ./src
 
-# Use node user for security
-USER node
+# Use nonroot user for security
+USER nonroot
 
-# Volume for persistent data
+# Volume for persistent data (mount with appropriate permissions)
 VOLUME ["/app/data"]
 
 # Expose port
@@ -43,5 +46,9 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Health check (requires HTTP module)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD ["/nodejs/bin/node", "-e", "require('http').get('http://localhost:3000/health',(r)=>process.exit(r.statusCode===200?0:1))"]
+
 # Run the application
-CMD ["node", "src/index.js"]
+CMD ["src/index.js"]
