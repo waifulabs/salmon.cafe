@@ -11,6 +11,7 @@ const OVERFEED_THRESHOLD = 100; // Dies if hunger >= 100
 const HOURS_PER_DAY = 24;
 const DELIVERY_HOUR = 3; // 3 AM delivery time
 const DELIVERY_INTERVAL_MS = 23 * 60 * 60 * 1000; // 23 hours between deliveries
+const AUTO_UPDATE_INTERVAL_MS = 60000; // Update every 60 seconds
 
 // Tank unlock thresholds (days survived)
 const TANK_THRESHOLDS = [
@@ -44,7 +45,7 @@ export class SalmonSimulator {
 
     // Calculate new hunger
     const hungerDecay = hoursElapsed * HUNGER_DECAY_PER_HOUR;
-    const newHunger = Math.max(0, Math.min(100, state.hunger - hungerDecay));
+    let newHunger = Math.max(0, Math.min(100, state.hunger - hungerDecay));
 
     // Check for death
     if (newHunger <= STARVATION_THRESHOLD) {
@@ -59,16 +60,25 @@ export class SalmonSimulator {
     const newTankLevel = this.calculateTankLevel(daysSurvived);
 
     // Check for nightly delivery
-    this.checkNightlyDelivery(state, now);
+    const deliveryInfo = this.shouldDeliverFood(state, now);
+    if (deliveryInfo.shouldDeliver) {
+      newHunger = Math.min(100, newHunger + DELIVERY_AMOUNT);
+    }
 
     // Update state
+    const updateData = {
+      hunger: newHunger,
+      daysSurvived,
+      tankLevel: newTankLevel,
+      updatedAt: now
+    };
+
+    if (deliveryInfo.shouldDeliver) {
+      updateData.lastDeliveryAt = now;
+    }
+
     db.update(schema.salmonState)
-      .set({
-        hunger: newHunger,
-        daysSurvived,
-        tankLevel: newTankLevel,
-        updatedAt: now
-      })
+      .set(updateData)
       .where(eq(schema.salmonState.id, 1))
       .run();
 
@@ -209,26 +219,18 @@ export class SalmonSimulator {
     return 1;
   }
 
-  // Check and perform nightly delivery
-  checkNightlyDelivery(state, now) {
+  // Check if should deliver nightly food
+  shouldDeliverFood(state, now) {
     const lastDelivery = state.lastDeliveryAt;
     const currentHour = now.getHours();
 
-    // Check if it's delivery time and we haven't delivered today
+    // Check if it's delivery time and we haven't delivered in the last 23 hours
     if (currentHour === DELIVERY_HOUR) {
       if (!lastDelivery || now - lastDelivery > DELIVERY_INTERVAL_MS) {
-        // Deliver food (add some hunger)
-        const newHunger = Math.min(100, state.hunger + DELIVERY_AMOUNT);
-
-        db.update(schema.salmonState)
-          .set({
-            hunger: newHunger,
-            lastDeliveryAt: now
-          })
-          .where(eq(schema.salmonState.id, 1))
-          .run();
+        return { shouldDeliver: true };
       }
     }
+    return { shouldDeliver: false };
   }
 
   // Get death history
@@ -250,7 +252,7 @@ export class SalmonSimulator {
   }
 
   // Start automatic updates
-  startAutoUpdate(intervalMs = 60000) { // Update every minute by default
+  startAutoUpdate(intervalMs = AUTO_UPDATE_INTERVAL_MS) {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
     }

@@ -313,7 +313,10 @@
   </div>
 
   <script>
-    let isAlive = true;
+    // Configuration
+    const UPDATE_INTERVAL_MS = 5000; // Update every 5 seconds
+    
+    let isAlive = null; // Will be set after first fetch
 
     async function updateStatus() {
       try {
@@ -428,7 +431,7 @@
 
     // Update status every 5 seconds
     updateStatus();
-    setInterval(updateStatus, 5000);
+    setInterval(updateStatus, UPDATE_INTERVAL_MS);
   </script>
 </body>
 </html>
