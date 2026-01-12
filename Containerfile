@@ -12,13 +12,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy package files and pre-installed node_modules
-# Note: node_modules is copied from host due to npm ci extraction bug in some Docker environments
-# In CI/CD, this should be: COPY package*.json ./ && RUN npm ci
+# NOTE: Due to an npm ci extraction bug in some Docker environments where packages
+# are not extracted after installation despite exit code 0, we copy pre-installed
+# node_modules from the host. In CI/CD pipelines, dependencies should be installed
+# via `npm ci` before docker build. See: https://github.com/npm/cli/issues/4027
 COPY package*.json ./
 COPY node_modules ./node_modules
 
-# Verify dependencies are installed correctly
-RUN test -f node_modules/express/index.js || (echo "ERROR: Dependencies not installed" && exit 1)
+# Verify dependencies are installed correctly using npm list
+RUN npm list --depth=0 express || (echo "ERROR: Dependencies not installed correctly" && exit 1)
 
 # Stage 2: Runtime stage with distroless
 FROM gcr.io/distroless/nodejs20-debian12:nonroot
