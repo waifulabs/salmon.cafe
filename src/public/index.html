@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐟 Salmon.cafe - Global Salmon Simulator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 0.9em;
+    }
+
+    .tank-container {
+      background: linear-gradient(180deg, #a8edea 0%, #5fb3b8 100%);
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 30px;
+      position: relative;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid #4a90a4;
+    }
+
+    .salmon {
+      font-size: 4em;
+      animation: swim 3s ease-in-out infinite;
+    }
+
+    @keyframes swim {
+      0%, 100% { transform: translateX(-10px) rotate(-5deg); }
+      50% { transform: translateX(10px) rotate(5deg); }
+    }
+
+    .salmon.dead {
+      animation: none;
+      transform: rotate(180deg);
+      opacity: 0.5;
+    }
+
+    .tank-level {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      color: #4a90a4;
+      font-size: 0.9em;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      color: #666;
+      font-size: 0.85em;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .stat-value.good {
+      color: #28a745;
+    }
+
+    .stat-value.warning {
+      color: #ffc107;
+    }
+
+    .stat-value.danger {
+      color: #dc3545;
+    }
+
+    .hunger-bar {
+      width: 100%;
+      height: 30px;
+      background: #e9ecef;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .hunger-fill {
+      height: 100%;
+      transition: width 0.5s ease, background-color 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 1.1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .feed-btn {
+      background: #28a745;
+      color: white;
+    }
+
+    .feed-btn:hover {
+      background: #218838;
+    }
+
+    .order-btn {
+      background: #007bff;
+      color: white;
+    }
+
+    .order-btn:hover {
+      background: #0056b3;
+    }
+
+    .respawn-btn {
+      grid-column: 1 / -1;
+      background: #6f42c1;
+      color: white;
+    }
+
+    .respawn-btn:hover {
+      background: #5a32a3;
+    }
+
+    .respawn-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: bold;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .status {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    .status-badge.alive {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-badge.dead {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .footer {
+      text-align: center;
+      color: #666;
+      font-size: 0.85em;
+      margin-top: 20px;
+    }
+
+    .last-update {
+      text-align: center;
+      color: #999;
+      font-size: 0.8em;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🐟 Salmon.cafe</h1>
+    <p class="subtitle">A Global Multiplayer Neglect Simulator</p>
+
+    <div class="status">
+      <span class="status-badge" id="statusBadge">Loading...</span>
+    </div>
+
+    <div class="tank-container">
+      <div class="tank-level" id="tankLevel">Tank 1</div>
+      <div class="salmon" id="salmon">🐟</div>
+    </div>
+
+    <div class="hunger-bar">
+      <div class="hunger-fill" id="hungerFill">50%</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Hunger</div>
+        <div class="stat-value" id="hungerValue">50</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Days Alive</div>
+        <div class="stat-value good" id="daysValue">0</div>
+      </div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <div class="buttons">
+      <button class="feed-btn" id="feedBtn" onclick="feedSalmon()">🍽️ Feed</button>
+      <button class="order-btn" id="orderBtn" onclick="orderFood()">📦 Order</button>
+      <button class="respawn-btn" id="respawnBtn" onclick="respawn()" disabled>🔄 Respawn</button>
+    </div>
+
+    <div class="footer">
+      One fish. Shared by everyone. Don't let it die. 🐟
+    </div>
+    <div class="last-update" id="lastUpdate">Last updated: Never</div>
+  </div>
+
+  <script>
+    // Configuration
+    const UPDATE_INTERVAL_MS = 5000; // Update every 5 seconds
+    
+    let isAlive = null; // Will be set after first fetch
+
+    async function updateStatus() {
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        
+        isAlive = data.isAlive;
+        const hunger = Math.round(data.hunger);
+        
+        // Update salmon emoji
+        const salmonEl = document.getElementById('salmon');
+        salmonEl.className = 'salmon' + (isAlive ? '' : ' dead');
+        
+        // Update status badge
+        const statusBadge = document.getElementById('statusBadge');
+        statusBadge.className = 'status-badge ' + (isAlive ? 'alive' : 'dead');
+        statusBadge.textContent = isAlive ? '✓ Alive' : '✗ Dead';
+        
+        // Update tank level
+        document.getElementById('tankLevel').textContent = `Tank ${data.tankLevel}`;
+        
+        // Update hunger bar
+        const hungerFill = document.getElementById('hungerFill');
+        hungerFill.style.width = hunger + '%';
+        hungerFill.textContent = hunger + '%';
+        
+        // Color code hunger bar
+        if (hunger < 20) {
+          hungerFill.style.backgroundColor = '#dc3545';
+        } else if (hunger < 40) {
+          hungerFill.style.backgroundColor = '#ffc107';
+        } else if (hunger > 80) {
+          hungerFill.style.backgroundColor = '#fd7e14';
+        } else {
+          hungerFill.style.backgroundColor = '#28a745';
+        }
+        
+        // Update stats
+        const hungerValue = document.getElementById('hungerValue');
+        hungerValue.textContent = hunger;
+        hungerValue.className = 'stat-value';
+        if (hunger < 20 || hunger > 80) {
+          hungerValue.classList.add('danger');
+        } else if (hunger < 40) {
+          hungerValue.classList.add('warning');
+        } else {
+          hungerValue.classList.add('good');
+        }
+        
+        document.getElementById('daysValue').textContent = data.daysSurvived;
+        
+        // Enable/disable buttons
+        document.getElementById('feedBtn').disabled = !isAlive;
+        document.getElementById('orderBtn').disabled = !isAlive;
+        document.getElementById('respawnBtn').disabled = isAlive;
+        
+        // Update last update time
+        document.getElementById('lastUpdate').textContent = 
+          `Last updated: ${new Date().toLocaleTimeString()}`;
+          
+      } catch (error) {
+        console.error('Error updating status:', error);
+      }
+    }
+
+    async function feedSalmon() {
+      try {
+        const response = await fetch('/api/feed', { method: 'POST' });
+        const data = await response.json();
+        showMessage(data.message, data.success ? 'success' : 'error');
+        await updateStatus();
+      } catch (error) {
+        showMessage('Failed to feed salmon', 'error');
+      }
+    }
+
+    async function orderFood() {
+      try {
+        const response = await fetch('/api/order', { method: 'POST' });
+        const data = await response.json();
+        showMessage(data.message, data.success ? 'success' : 'error');
+        await updateStatus();
+      } catch (error) {
+        showMessage('Failed to order food', 'error');
+      }
+    }
+
+    async function respawn() {
+      if (!confirm('Are you sure you want to respawn a new salmon?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/respawn', { method: 'POST' });
+        const data = await response.json();
+        showMessage(data.message, 'success');
+        await updateStatus();
+      } catch (error) {
+        showMessage('Failed to respawn salmon', 'error');
+      }
+    }
+
+    function showMessage(text, type) {
+      const messageEl = document.getElementById('message');
+      messageEl.textContent = text;
+      messageEl.className = 'message show ' + type;
+      
+      setTimeout(() => {
+        messageEl.classList.remove('show');
+      }, 3000);
+    }
+
+    // Update status every 5 seconds
+    updateStatus();
+    setInterval(updateStatus, UPDATE_INTERVAL_MS);
+  </script>
+</body>
+</html>
