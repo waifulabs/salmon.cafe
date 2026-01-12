@@ -31,8 +31,22 @@ A multiplayer neglect simulator where one salmon is shared by all users. Keep it
 
 ## Installation
 
+### Local Development
+
 ```bash
 npm install
+```
+
+### Container Deployment
+
+For container deployment, see [CONTAINER.md](./CONTAINER.md) for detailed instructions.
+
+Quick start:
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v $(pwd)/data:/app/data \
+  ghcr.io/waifulabs/salmon.cafe:latest
 ```
 
 ## Usage
