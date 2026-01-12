@@ -5,10 +5,12 @@ import { eq, sql, desc } from 'drizzle-orm';
 const HUNGER_DECAY_PER_HOUR = 5; // Hunger decreases by 5 per hour
 const FEED_AMOUNT = 15; // Feeding increases hunger by 15
 const ORDER_AMOUNT = 25; // Ordering increases hunger by 25
+const DELIVERY_AMOUNT = 20; // Nightly delivery amount
 const STARVATION_THRESHOLD = 0; // Dies if hunger <= 0
 const OVERFEED_THRESHOLD = 100; // Dies if hunger >= 100
 const HOURS_PER_DAY = 24;
 const DELIVERY_HOUR = 3; // 3 AM delivery time
+const DELIVERY_INTERVAL_MS = 23 * 60 * 60 * 1000; // 23 hours between deliveries
 
 // Tank unlock thresholds (days survived)
 const TANK_THRESHOLDS = [
@@ -214,10 +216,9 @@ export class SalmonSimulator {
 
     // Check if it's delivery time and we haven't delivered today
     if (currentHour === DELIVERY_HOUR) {
-      if (!lastDelivery || now - lastDelivery > 23 * 60 * 60 * 1000) {
+      if (!lastDelivery || now - lastDelivery > DELIVERY_INTERVAL_MS) {
         // Deliver food (add some hunger)
-        const deliveryAmount = 20;
-        const newHunger = Math.min(100, state.hunger + deliveryAmount);
+        const newHunger = Math.min(100, state.hunger + DELIVERY_AMOUNT);
 
         db.update(schema.salmonState)
           .set({
