@@ -1,7 +1,7 @@
 {
   "name": "salmon.cafe",
   "version": "1.0.0",
-  "description": "A point of concept multiplayer neglect simulator",
+  "description": "A proof of concept multiplayer neglect simulator",
   "type": "module",
   "main": "src/index.js",
   "scripts": {

@@ -1,5 +1,5 @@
 import { db, schema } from '../db/index.js';
-import { eq } from 'drizzle-orm';
+import { eq, sql, desc } from 'drizzle-orm';
 
 // Constants
 const HUNGER_DECAY_PER_HOUR = 5; // Hunger decreases by 5 per hour
@@ -234,7 +234,7 @@ export class SalmonSimulator {
   getDeathHistory(limit = 10) {
     return db.select()
       .from(schema.deathHistory)
-      .orderBy(schema.deathHistory.diedAt)
+      .orderBy(desc(schema.deathHistory.diedAt))
       .limit(limit)
       .all();
   }
@@ -243,7 +243,7 @@ export class SalmonSimulator {
   getRecentActions(limit = 20) {
     return db.select()
       .from(schema.actionLog)
-      .orderBy(schema.actionLog.timestamp)
+      .orderBy(desc(schema.actionLog.timestamp))
       .limit(limit)
       .all();
   }
@@ -270,8 +270,8 @@ export class SalmonSimulator {
   // Get statistics for Prometheus
   getStats() {
     const state = this.getState();
-    const deathCount = db.select().from(schema.deathHistory).all().length;
-    const actionCount = db.select().from(schema.actionLog).all().length;
+    const deathCount = db.select({ count: sql`COUNT(*)` }).from(schema.deathHistory).get()?.count || 0;
+    const actionCount = db.select({ count: sql`COUNT(*)` }).from(schema.actionLog).get()?.count || 0;
 
     return {
       isAlive: state?.isAlive ? 1 : 0,
